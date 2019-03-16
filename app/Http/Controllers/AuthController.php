@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\User;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -11,18 +12,36 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register']]);
+        $this->middleware('refresh.token', ['except' => ['login', 'register']]);
     }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function register(Request $request)
+    {
+        $newUser = [
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+            'password' => bcrypt($request->input('password')),
+        ];
+        $user = User::create($newUser);
+        $token = \JWTAuth::fromUser($user);
+        return $this->responseWithToken($token);
+    }
+
 
     /**
      * @return \Illuminate\Http\JsonResponse
      */
     public function login()
     {
-        $credentials = \request(['email', 'password']);
+        $credentials = request(['email', 'password']);
 
         if (!$token = auth('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => '账号或者密码错误'], 401);
         }
 
         return $this->responseWithToken($token);
@@ -57,7 +76,7 @@ class AuthController extends Controller
      * @param $token
      * @return \Illuminate\Http\JsonResponse
      */
-    public function responseWithToken($token)
+    protected function responseWithToken($token)
     {
         return response()->json([
            'access_token' => $token,

@@ -18,7 +18,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::group([
-
 ], function () {
-    Route::post('users', 'AuthController@login');
+    Route::post('users/register', 'AuthController@register');
+    Route::post('users/login', 'AuthController@login');
+    Route::get('users/logout', 'AurhController@logout');
 });
